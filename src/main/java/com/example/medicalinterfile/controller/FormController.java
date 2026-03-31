@@ -62,11 +62,8 @@ public class FormController {
             if (filename.length() > 0) filename.append(" ");
             filename.append(formData.getLastName().trim());
         }
-        if (filename.length() > 0) {
-            filename.append(" medical interfile.pdf");
-        } else {
-            filename.append("medical_interfile.pdf");
-        }
+        filename.append(" MEDICAL INTERFILE.pdf");
+
         headers.setContentDispositionFormData("attachment", filename.toString());
         return ResponseEntity.ok().headers(headers).body(pdfBytes);
     }

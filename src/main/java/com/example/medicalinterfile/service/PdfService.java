@@ -81,47 +81,114 @@ public class PdfService {
 
             // Subject and body
             Font subjectFont = new Font(Font.FontFamily.HELVETICA, 11, Font.BOLD);
-            Paragraph subject = new Paragraph("Subject:  Interfile I-693 Medical Report to Pending Form I-485 (Adjustment of Status)", subjectFont);
+            Paragraph subject = new Paragraph("\n\nSubject:  Request to Interfile Form I-693 with Pending Form I-485", subjectFont);
             subject.setSpacingBefore(22f);
             document.add(subject);
 
-            document.add(new Paragraph("\nDear Sir/Madam,", new Font(Font.FontFamily.HELVETICA, 10)));
-            document.add(new Paragraph("\nMy adjustment of status application is currently pending. The visa numbers for my category are available for my priority date according to the most recent Department of State visa bulletin.", new Font(Font.FontFamily.HELVETICA, 10)));
-            document.add(new Paragraph("\nI request you to kindly please interfile my I-693 form (Report of Medical Examination and Vaccination Record) signed by the Civil Surgeon to the pending form I-485.", new Font(Font.FontFamily.HELVETICA, 10)));
+            document.add(new Paragraph("\n\nDear Sir/Madam,", new Font(Font.FontFamily.HELVETICA, 10)));
+            document.add(new Paragraph("\nMy Form I-485 (Adjustment of Status) is pending. My priority date became current per the April 2026 Visa Bulletin.", new Font(Font.FontFamily.HELVETICA, 10)));
+            document.add(new Paragraph("\nPlease interfile the enclosed Form I-693 (Report of Immigration Medical Examination and Vaccination Record), signed by a civil surgeon, with my pending Form I-485.", new Font(Font.FontFamily.HELVETICA, 10)));
 
-            // Details section: two columns
+
+            // Personal Details section (single column, full width)
+            PdfPTable personalDetailsTable = new PdfPTable(1);
+            personalDetailsTable.setWidthPercentage(100);
+            personalDetailsTable.setSpacingBefore(36f); // keep as is for Personal Details
+            PdfPCell personalDetailsCell = new PdfPCell();
+            personalDetailsCell.setBorder(Rectangle.NO_BORDER);
+            personalDetailsCell.addElement(new Phrase("PERSONAL DETAILS", new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD)));
+            PdfPTable personalTable = new PdfPTable(2);
+            personalTable.setWidthPercentage(100);
+            personalTable.setWidths(new float[]{1.3f, 2.0f});
+            personalTable.addCell(makeAlignedCell("First Name", true));
+            personalTable.addCell(makeAlignedCell(data.getFirstName(), false));
+            if (data.getMiddleName() != null && !data.getMiddleName().trim().isEmpty()) {
+                personalTable.addCell(makeAlignedCell("Middle Name", true));
+                personalTable.addCell(makeAlignedCell(data.getMiddleName(), false));
+            }
+            personalTable.addCell(makeAlignedCell("Last Name", true));
+            personalTable.addCell(makeAlignedCell(data.getLastName(), false));
+            personalTable.addCell(makeAlignedCell("Alien#", true));
+            personalTable.addCell(makeAlignedCell(data.getANumber(), false));
+            personalTable.addCell(makeAlignedCell("Date of Birth", true));
+            personalTable.addCell(makeAlignedCell(formatDate(data.getDob()), false));
+            // Add Country of Birth below Date of Birth
+            personalTable.addCell(makeAlignedCell("Country of Birth", true));
+            personalTable.addCell(makeAlignedCell("INDIA", false));
+            personalDetailsCell.addElement(personalTable);
+            // Combine Personal Details and Case Details side by side
             PdfPTable detailsTable = new PdfPTable(2);
             detailsTable.setWidthPercentage(100);
             detailsTable.setSpacingBefore(36f);
-            detailsTable.setWidths(new float[]{2.2f, 2.8f});
+            detailsTable.setWidths(new float[]{0.9f, 1.2f});
 
-            // Left: Personal Details
-            PdfPCell leftDetails = new PdfPCell();
-            leftDetails.setBorder(Rectangle.NO_BORDER);
-            leftDetails.addElement(new Phrase("PERSONAL DETAILS", new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD)));
-            leftDetails.addElement(new Phrase("First Name        " + data.getFirstName(), new Font(Font.FontFamily.HELVETICA, 10)));
+            // Personal Details cell (left)
+            PdfPCell personalDetailsCell2 = new PdfPCell();
+            personalDetailsCell2.setBorder(Rectangle.NO_BORDER);
+            personalDetailsCell2.addElement(new Phrase("PERSONAL DETAILS", new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD)));
+            PdfPTable personalTable2 = new PdfPTable(2);
+            personalTable2.setWidthPercentage(100);
+            personalTable2.setWidths(new float[]{1.3f, 2.0f});
+            personalTable2.addCell(makeAlignedCell("First Name", true));
+            personalTable2.addCell(makeAlignedCell(data.getFirstName(), false));
             if (data.getMiddleName() != null && !data.getMiddleName().trim().isEmpty()) {
-                leftDetails.addElement(new Phrase("Middle Name    " + data.getMiddleName(), new Font(Font.FontFamily.HELVETICA, 10)));
+                personalTable2.addCell(makeAlignedCell("Middle Name", true));
+                personalTable2.addCell(makeAlignedCell(data.getMiddleName(), false));
             }
-            leftDetails.addElement(new Phrase("Last Name        " + data.getLastName(), new Font(Font.FontFamily.HELVETICA, 10)));
-            leftDetails.addElement(new Phrase("A-Number         " + data.getANumber(), new Font(Font.FontFamily.HELVETICA, 10)));
-            leftDetails.addElement(new Phrase("Date of Birth      " + formatDate(data.getDob()), new Font(Font.FontFamily.HELVETICA, 10)));
-            detailsTable.addCell(leftDetails);
+            personalTable2.addCell(makeAlignedCell("Last Name", true));
+            personalTable2.addCell(makeAlignedCell(data.getLastName(), false));
+            personalTable2.addCell(makeAlignedCell("Alien#", true));
+            personalTable2.addCell(makeAlignedCell(data.getANumber(), false));
+            personalTable2.addCell(makeAlignedCell("Date of Birth", true));
+            personalTable2.addCell(makeAlignedCell(formatDate(data.getDob()), false));
+            personalTable2.addCell(makeAlignedCell("Country of Birth", true));
+            personalTable2.addCell(makeAlignedCell("INDIA", false));
+            personalDetailsCell2.addElement(personalTable2);
+            detailsTable.addCell(personalDetailsCell2);
 
-            // Right: Case Details
-            PdfPCell rightDetails = new PdfPCell();
-            rightDetails.setBorder(Rectangle.NO_BORDER);
-            rightDetails.addElement(new Phrase("CASE DETAILS      (I-485)", new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD)));
-            rightDetails.addElement(new Phrase("Receipt                " + data.getReceipt(), new Font(Font.FontFamily.HELVETICA, 10)));
-            rightDetails.addElement(new Phrase("Receipt Date        " + formatDate(data.getReceiptDate()), new Font(Font.FontFamily.HELVETICA, 10)));
-            rightDetails.addElement(new Phrase("Current Status      PENDING", new Font(Font.FontFamily.HELVETICA, 10)));
-            detailsTable.addCell(rightDetails);
+            // Case Details cell (right)
+            PdfPCell caseDetailsCell2 = new PdfPCell();
+            caseDetailsCell2.setBorder(Rectangle.NO_BORDER);
+            caseDetailsCell2.addElement(new Phrase("CASE DETAILS (I-485)", new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD)));
+            PdfPTable caseTable2 = new PdfPTable(2);
+            caseTable2.setWidthPercentage(100);
+            caseTable2.setHorizontalAlignment(Element.ALIGN_LEFT); // align table to left
+            caseTable2.setWidths(new float[]{1.2f, 2.9f}); // make value column narrower to bring value closer
+            PdfPCell leftLabel, rightValue;
+            float indent = 12f;
+            leftLabel = makeAlignedCell("Receipt#", true);
+            leftLabel.setHorizontalAlignment(Element.ALIGN_LEFT);
+            leftLabel.setPaddingLeft(indent);
+            rightValue = makeAlignedCell(data.getReceipt(), false, true);
+            rightValue.setHorizontalAlignment(Element.ALIGN_LEFT);
+            rightValue.setPaddingLeft(0f); // remove left padding from value
+            caseTable2.addCell(leftLabel);
+            caseTable2.addCell(rightValue);
+            leftLabel = makeAlignedCell("Receipt Date", true);
+            leftLabel.setHorizontalAlignment(Element.ALIGN_LEFT);
+            leftLabel.setPaddingLeft(indent);
+            rightValue = makeAlignedCell(formatDate(data.getReceiptDate()), false, true);
+            rightValue.setHorizontalAlignment(Element.ALIGN_LEFT);
+            rightValue.setPaddingLeft(0f);
+            caseTable2.addCell(leftLabel);
+            caseTable2.addCell(rightValue);
+            leftLabel = makeAlignedCell("Current Status", true);
+            leftLabel.setHorizontalAlignment(Element.ALIGN_LEFT);
+            leftLabel.setPaddingLeft(indent);
+            rightValue = makeAlignedCell("Pending", false, true);
+            rightValue.setHorizontalAlignment(Element.ALIGN_LEFT);
+            rightValue.setPaddingLeft(0f);
+            caseTable2.addCell(leftLabel);
+            caseTable2.addCell(rightValue);
+            caseDetailsCell2.addElement(caseTable2);
+            detailsTable.addCell(caseDetailsCell2);
+
             document.add(detailsTable);
 
             // Contact and Address
             PdfPTable contactTable = new PdfPTable(2);
             contactTable.setWidthPercentage(100);
-            contactTable.setSpacingBefore(32f);
+            contactTable.setSpacingBefore(12f); // reduced spacing so Mailing Address is not too far from Case Details
             contactTable.setWidths(new float[]{2.2f, 2.8f});
 
 
@@ -130,11 +197,11 @@ public class PdfService {
             contactCell.addElement(new Phrase("CONTACT", new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD)));
             PdfPTable contactInnerTable = new PdfPTable(2);
             contactInnerTable.setWidthPercentage(100);
-            contactInnerTable.setWidths(new float[]{1.2f, 2.8f});
-            contactInnerTable.addCell(makeNoBorderCell("Email", 10, true));
-            contactInnerTable.addCell(makeNoBorderCell(data.getEmail(), 10, false));
-            contactInnerTable.addCell(makeNoBorderCell("Phone", 10, true));
-            contactInnerTable.addCell(makeNoBorderCell(data.getPhone(), 10, false));
+            contactInnerTable.setWidths(new float[]{0.8f, 2.8f});
+            contactInnerTable.addCell(makeAlignedCell("Email", true));
+            contactInnerTable.addCell(makeAlignedCell(data.getEmail(), false));
+            contactInnerTable.addCell(makeAlignedCell("Phone#", true));
+            contactInnerTable.addCell(makeAlignedCell(data.getPhone(), false));
 
 
             contactCell.addElement(contactInnerTable);
@@ -143,11 +210,9 @@ public class PdfService {
 
             PdfPCell addressCell = new PdfPCell();
             addressCell.setBorder(Rectangle.NO_BORDER);
-            addressCell.addElement(new Phrase("USA ADDRESS", new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD)));
-            // Format address: Street address, then CITY STATE ZIP as a single line
-            if (data.getStreetAddress() != null && !data.getStreetAddress().isEmpty()) {
-                addressCell.addElement(new Phrase(data.getStreetAddress(), new Font(Font.FontFamily.HELVETICA, 10)));
-            }
+            addressCell.addElement(new Phrase("MAILING ADDRESS", new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD)));
+            // Address block: Street on one line, City State Zip on next line, no labels
+            String street = data.getStreetAddress() != null ? data.getStreetAddress() : "";
             StringBuilder cityStateZip = new StringBuilder();
             if (data.getCity() != null && !data.getCity().isEmpty()) {
                 cityStateZip.append(data.getCity());
@@ -160,9 +225,14 @@ public class PdfService {
                 if (cityStateZip.length() > 0) cityStateZip.append(" ");
                 cityStateZip.append(data.getZip());
             }
-            if (cityStateZip.length() > 0) {
-                addressCell.addElement(new Phrase(cityStateZip.toString(), new Font(Font.FontFamily.HELVETICA, 10)));
-            }
+            Paragraph addressBlock = new Paragraph();
+            addressBlock.setSpacingBefore(0f);
+            addressBlock.add(new Phrase(street, new Font(Font.FontFamily.HELVETICA, 10)));
+            addressBlock.add(Chunk.NEWLINE);
+            addressBlock.add(new Phrase(cityStateZip.toString(), new Font(Font.FontFamily.HELVETICA, 10)));
+            // Indent the address block for better visual separation
+            addressBlock.setIndentationLeft(9f); // Move address a bit to the right
+            addressCell.addElement(addressBlock);
             contactTable.addCell(addressCell);
             document.add(contactTable);
 
@@ -183,8 +253,8 @@ public class PdfService {
             // Enclosures cell (same as before)
             PdfPCell enclosuresCell = new PdfPCell();
             enclosuresCell.setBorder(Rectangle.NO_BORDER);
-            enclosuresCell.addElement(new Phrase("Enclosures:", new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD)));
-            enclosuresCell.addElement(new Phrase("1. Copy of I-797C, USCIS i-485 Receipt Notice\n2. Sealed I-693 Medical Report signed by the Civil Surgeon\n3. Copy of Passport\n4. Copy of Driving License", new Font(Font.FontFamily.HELVETICA, 9)));
+            enclosuresCell.addElement(new Phrase("   Enclosures:", new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD)));
+            enclosuresCell.addElement(new Phrase("   1. Copy of I-797C, USCIS i-485 Receipt Notice\n   2. Sealed I-693 Medical Report signed by the Civil Surgeon\n   3. Copy of Passport\n   4. Copy of Birth Certificate", new Font(Font.FontFamily.HELVETICA, 9)));
             bottomTable.addCell(enclosuresCell);
 
             // Add the label 'Signature' below the box, spanning only the first column
@@ -208,7 +278,8 @@ public class PdfService {
             datePlaceTable.setWidths(new float[]{2.2f, 2.8f});
             PdfPCell dateCell = new PdfPCell();
             dateCell.setBorder(Rectangle.NO_BORDER);
-            String today = new java.text.SimpleDateFormat("MM/dd/yyyy").format(new java.util.Date());
+            //String today = new java.text.SimpleDateFormat("MM/dd/yyyy").format(new java.util.Date());
+            String today = "04/01/2026";
             dateCell.addElement(new Phrase("Date:    " + today, new Font(Font.FontFamily.HELVETICA, 10)));
             datePlaceTable.addCell(dateCell);
             PdfPCell placeCell = new PdfPCell();
@@ -244,6 +315,26 @@ public class PdfService {
         Font font = new Font(Font.FontFamily.HELVETICA, fontSize, bold ? Font.BOLD : Font.NORMAL);
         PdfPCell cell = new PdfPCell(new Phrase(text, font));
         cell.setBorder(Rectangle.NO_BORDER);
+        return cell;
+    }
+
+    // Helper for aligned cell: label right-aligned, value left-aligned, two spaces between
+    private PdfPCell makeAlignedCell(String text, boolean isLabel) {
+        return makeAlignedCell(text, isLabel, false);
+    }
+
+    // Overloaded: allow disabling value prefix
+    private PdfPCell makeAlignedCell(String text, boolean isLabel, boolean noPrefix) {
+        Font font = new Font(Font.FontFamily.HELVETICA, 10, isLabel ? Font.BOLD : Font.NORMAL);
+        Phrase phrase;
+        if (isLabel || noPrefix) {
+            phrase = new Phrase(text != null ? text : "", font);
+        } else {
+            phrase = new Phrase("  " + (text != null ? text : ""), font);
+        }
+        PdfPCell cell = new PdfPCell(phrase);
+        cell.setBorder(Rectangle.NO_BORDER);
+        cell.setHorizontalAlignment(isLabel ? Element.ALIGN_RIGHT : Element.ALIGN_LEFT);
         return cell;
     }
 
