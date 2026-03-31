@@ -184,7 +184,7 @@ public class PdfService {
             PdfPCell enclosuresCell = new PdfPCell();
             enclosuresCell.setBorder(Rectangle.NO_BORDER);
             enclosuresCell.addElement(new Phrase("Enclosures:", new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD)));
-            enclosuresCell.addElement(new Phrase("1. Copy of I-797C, USCIS i-485 Receipt Notice\n2. Sealed I-693 Medical Report signed by the Civil Surgeon\n3. Copy of biometrics receipt\n4. Copy of Passport\n5. Copy of Driving License", new Font(Font.FontFamily.HELVETICA, 9)));
+            enclosuresCell.addElement(new Phrase("1. Copy of I-797C, USCIS i-485 Receipt Notice\n2. Sealed I-693 Medical Report signed by the Civil Surgeon\n3. Copy of Passport\n4. Copy of Driving License", new Font(Font.FontFamily.HELVETICA, 9)));
             bottomTable.addCell(enclosuresCell);
 
             // Add the label 'Signature' below the box, spanning only the first column
