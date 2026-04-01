@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Medical Interfile PDF Generator (Standalone)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- jsBarcode -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f6f8fa; margin: 0; padding: 0; }
+        .container { max-width: 540px; margin: 32px auto 0 auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); padding: 32px 36px 28px 36px; }
+        h2 { text-align: center; color: #2d3a4a; margin-bottom: 18px; }
+        .disclaimer { background: #fffbe6; color: #856404; border: 1px solid #ffeeba; border-radius: 6px; padding: 14px 18px; margin-bottom: 24px; font-size: 15px; line-height: 1.5; }
+        form label { display: block; margin-bottom: 12px; color: #2d3a4a; font-weight: 500; }
+        form input[type="text"], form input[type="number"], form input[type="date"], form input[type="email"], form select { width: 100%; padding: 8px 10px; margin-top: 4px; border: 1px solid #cfd8dc; border-radius: 4px; font-size: 15px; }
+        form button { margin-top: 18px; width: 100%; background: #2d3a4a; color: #fff; border: none; border-radius: 4px; padding: 12px 0; font-size: 16px; font-weight: 600; cursor: pointer; }
+        #appList { margin-bottom: 18px; }
+        @media (max-width: 600px) { .container { padding: 16px 6px 12px 6px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="disclaimer">
+        <strong>Disclaimer:</strong> This form is provided for your convenience and is used at your own discretion. We do not take any responsibility for the loss, misuse, or exposure of your personal information, contact details, or any other data by using this form.<br>
+        <em>Note: The form details you enter are stored in browser's local storage and are not transmitted to any external server. All PDF generation is done in browser.</em>
+    </div>
+    <h2>Medical Interfile PDF Generator</h2>
+    <label>Select Applicant:
+        <select id="appList" onchange="selectApp()" disabled></select>
+    </label>
+    <form id="medicalForm" autocomplete="off" onsubmit="event.preventDefault(); saveFormData(); generatePDF();">
+        <label>Select USCIS Address:
+            <select name="uscisAddressName" required>
+                <option value="OPKS">Overland Park, KS</option>
+                <option value="LSMO">Lee's Summit, MO</option>
+            </select>
+        </label>
+        <label>First Name:
+            <input type="text" name="firstName" required onchange="loadFormData()">
+        </label>
+        <label>Middle Name (optional):
+            <input type="text" name="middleName">
+        </label>
+        <label>Last Name:
+            <input type="text" name="lastName" required onchange="loadFormData()">
+        </label>
+        <label>A-Number:
+            <input type="text" name="aNumber" required pattern="[0-9]+" title="Numbers only">
+        </label>
+        <label>Date of Birth:
+            <input type="date" name="dob" required>
+        </label>
+        <label>Receipt Number:
+            <input type="text" name="receipt" required>
+        </label>
+        <label>Receipt Date:
+            <input type="date" name="receiptDate" required>
+        </label>
+        <label>Current Status:
+            <input type="text" name="status" required>
+        </label>
+        <label>Email:
+            <input type="email" name="email" required>
+        </label>
+        <label>Phone:
+            <input type="text" name="phone" required>
+        </label>
+        <label>Street Address:
+            <input type="text" name="streetAddress" required>
+        </label>
+        <label>City:
+            <input type="text" name="city" required>
+        </label>
+        <label>State:
+            <select name="state" required>
+                <option value="">Select State</option>
+                <option value="AL">AL</option><option value="AK">AK</option><option value="AZ">AZ</option><option value="AR">AR</option><option value="CA">CA</option><option value="CO">CO</option><option value="CT">CT</option><option value="DE">DE</option><option value="FL">FL</option><option value="GA">GA</option><option value="HI">HI</option><option value="ID">ID</option><option value="IL">IL</option><option value="IN">IN</option><option value="IA">IA</option><option value="KS">KS</option><option value="KY">KY</option><option value="LA">LA</option><option value="ME">ME</option><option value="MD">MD</option><option value="MA">MA</option><option value="MI">MI</option><option value="MN">MN</option><option value="MS">MS</option><option value="MO">MO</option><option value="MT">MT</option><option value="NE">NE</option><option value="NV">NV</option><option value="NH">NH</option><option value="NJ">NJ</option><option value="NM">NM</option><option value="NY">NY</option><option value="NC">NC</option><option value="ND">ND</option><option value="OH">OH</option><option value="OK">OK</option><option value="OR">OR</option><option value="PA">PA</option><option value="RI">RI</option><option value="SC">SC</option><option value="SD">SD</option><option value="TN">TN</option><option value="TX">TX</option><option value="UT">UT</option><option value="VT">VT</option><option value="VA">VA</option><option value="WA">WA</option><option value="WV">WV</option><option value="WI">WI</option><option value="WY">WY</option>
+            </select>
+        </label>
+        <label>Zip:
+            <input type="text" name="zip" required>
+        </label>
+        <button type="submit">Generate PDF</button>
+    </form>
+</div>
+<canvas id="barcodeCanvas" style="display:none;"></canvas>
+<script>
+// Save form data to localStorage on submit
+function saveFormData() {
+    const form = document.getElementById('medicalForm');
+    const data = {};
+    Array.from(form.elements).forEach(el => {
+        if (el.name) data[el.name] = el.value;
+    });
+    if (data.lastName && data.firstName) {
+        const key = `${data.lastName},${data.firstName}`;
+        localStorage.setItem(key, JSON.stringify(data));
+        updateAppList();
+    }
+}
+// Load form data from localStorage if available
+function loadFormData() {
+    const form = document.getElementById('medicalForm');
+    const lastName = form.elements['lastName'].value;
+    const firstName = form.elements['firstName'].value;
+    if (lastName && firstName) {
+        const key = `${lastName},${firstName}`;
+        const saved = localStorage.getItem(key);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.keys(data).forEach(k => {
+                if (form.elements[k]) form.elements[k].value = data[k];
+            });
+        }
+    }
+}
+// Populate the application listbox from localStorage
+function updateAppList() {
+    const appList = document.getElementById('appList');
+    if (!appList) return;
+    appList.innerHTML = '';
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        try {
+            const data = JSON.parse(localStorage.getItem(key));
+            if (data && data.firstName && data.lastName) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.text = key;
+                appList.appendChild(option);
+            }
+        } catch (e) { /* skip non-JSON */ }
+    }
+    appList.disabled = appList.options.length === 0;
+}
+// When an application is selected, load its data into the form
+function selectApp() {
+    const appList = document.getElementById('appList');
+    const key = appList.value;
+    if (key) {
+        const saved = localStorage.getItem(key);
+        if (saved) {
+            const data = JSON.parse(saved);
+            const form = document.getElementById('medicalForm');
+            Object.keys(data).forEach(k => {
+                if (form.elements[k]) form.elements[k].value = data[k];
+            });
+        }
+    }
+}
+window.onload = function() {
+    updateAppList();
+    const appList = document.getElementById('appList');
+    if (appList && appList.options.length > 0) {
+        appList.selectedIndex = 0;
+        selectApp();
+    }
+};
+// Helper: Format date as MM/dd/yyyy
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr;
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${mm}/${dd}/${yyyy}`;
+}
+// Helper: Get USCIS address by code
+function getUscisAddress(code) {
+    if (code === 'OPKS') {
+        return [
+            'USCIS,  Attention: Adjustment of Status',
+            '7600B West 119th Street',
+            'Overland Park, KS 66213'
+        ];
+    } else if (code === 'LSMO') {
+        return [
+            'USCIS',
+            'NATIONAL BENEFITS CENTER',
+            'ATTN: I-693 MEDICAL INTERFILE',
+            '850 NW Chipman Rd, Suite 5000',
+            "Lee's Summit, MO, 64063"
+        ];
+    }
+    return [];
+}
+// Generate barcode as dataURL
+function generateBarcodeDataURL(text, width, height) {
+    const canvas = document.getElementById('barcodeCanvas');
+    JsBarcode(canvas, text, { format: 'CODE128', width: 2, height: height/2, displayValue: false, margin: 0 });
+    return canvas.toDataURL('image/png');
+}
+// Main PDF generation logic
+function generatePDF() {
+    const form = document.getElementById('medicalForm');
+    const data = {};
+    Array.from(form.elements).forEach(el => { if (el.name) data[el.name] = el.value; });
+    // Compose filename
+    let filename = '';
+    if (data.firstName) filename += data.firstName.trim() + ' ';
+    if (data.lastName) filename += data.lastName.trim() + ' ';
+    filename += 'MEDICAL INTERFILE.pdf';
+    // Get address
+    const uscisAddress = getUscisAddress(data.uscisAddressName);
+    // PDF setup
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let y = 40;
+    // Header: To, USCIS, Barcodes
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('To,', 40, y);
+    uscisAddress.forEach(line => { y += 14; doc.text(line, 40, y); });
+    // Barcodes (Receipt# and Alien#)
+    const barcodeY = 40;
+    const barcodeX = pageWidth - 320;
+    const barcodeW = 120, barcodeH = 32;
+    // Barcode labels
+    doc.setFontSize(8);
+    doc.text('Receipt#', barcodeX, barcodeY);
+    doc.text('Alien#', barcodeX + barcodeW + 40, barcodeY);
+    // Barcodes
+    const receiptBarcode = generateBarcodeDataURL(data.receipt || ' ', barcodeW, barcodeH);
+    const aNumberBarcode = generateBarcodeDataURL(data.aNumber || ' ', barcodeW, barcodeH);
+    doc.addImage(receiptBarcode, 'PNG', barcodeX, barcodeY + 4, barcodeW, barcodeH);
+    doc.addImage(aNumberBarcode, 'PNG', barcodeX + barcodeW + 40, barcodeY + 4, barcodeW, barcodeH);
+    // Numbers below barcodes
+    doc.setFontSize(8);
+    doc.text(data.receipt || '', barcodeX + barcodeW/2, barcodeY + barcodeH + 18, { align: 'center' });
+    doc.text(data.aNumber || '', barcodeX + barcodeW + 40 + barcodeW/2, barcodeY + barcodeH + 18, { align: 'center' });
+    // Subject and body (with wrapping)
+    y += 27;
+    // Line above subject
+    y += 0; // (no line drawn)
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+    doc.text('Subject:  Request to Interfile Form I-693 with Pending Form I-485', 40, y + 36, {maxWidth: pageWidth - 80});
+    // Line below subject
+    y += 0; // (no line drawn)
+    y += 75;
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+    doc.text('Dear Sir/Madam,', 40, y, {maxWidth: pageWidth - 80});
+    // Line below Sir/Madam
+    y += 0; // (no line drawn)
+    y += 23;
+    doc.text('My Form I-485 (Adjustment of Status) is pending. My priority date became current per the April 2026 Visa Bulletin.', 40, y, {maxWidth: pageWidth - 80});
+    y += 30;
+    doc.text('Please interfile the enclosed Form I-693 (Report of Immigration Medical Examination and Vaccination Record), signed by a civil surgeon, with my pending Form I-485.', 40, y, {maxWidth: pageWidth - 80});
+
+    // Personal and Case Details (side by side, right-aligned labels)
+    y += 50;
+    doc.setFont('helvetica', 'bold');
+    doc.text('PERSONAL DETAILS', 40, y);
+    doc.text('CASE DETAILS (I-485)', 260, y);
+    let yDetails = y + 22;
+    const labelX1 = 130, valueX1 = 140;
+    const labelX2 = 350, valueX2 = 360;
+    const rowH = 18;
+    // Personal Details
+    doc.setFont('helvetica', 'bold');
+    doc.text('First Name', labelX1, yDetails, {align:'right'});
+    doc.text('Middle Name', labelX1, yDetails+rowH, {align:'right'});
+    doc.text('Last Name', labelX1, yDetails+rowH*2, {align:'right'});
+    doc.text('Alien#', labelX1, yDetails+rowH*3, {align:'right'});
+    doc.text('Date of Birth', labelX1, yDetails+rowH*4, {align:'right'});
+    doc.text('Country of Birth', labelX1, yDetails+rowH*5, {align:'right'});
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.firstName || '', valueX1, yDetails);
+    doc.text(data.middleName || '', valueX1, yDetails+rowH);
+    doc.text(data.lastName || '', valueX1, yDetails+rowH*2);
+    doc.text(data.aNumber || '', valueX1, yDetails+rowH*3);
+    doc.text(formatDate(data.dob), valueX1, yDetails+rowH*4);
+    doc.text('INDIA', valueX1, yDetails+rowH*5);
+    // Case Details
+    doc.setFont('helvetica', 'bold');
+    doc.text('Receipt#', labelX2, yDetails, {align:'right'});
+    doc.text('Receipt Date', labelX2, yDetails+rowH, {align:'right'});
+    doc.text('Current Status', labelX2, yDetails+rowH*2, {align:'right'});
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.receipt || '', valueX2, yDetails);
+    doc.text(formatDate(data.receiptDate), valueX2, yDetails+rowH);
+    doc.text(data.status || '', valueX2, yDetails+rowH*2);
+
+    // Contact and Mailing Address (side by side, right-aligned labels)
+    let yContact = yDetails + rowH*6 + 18;
+    doc.setFont('helvetica', 'bold');
+    doc.text('CONTACT', 40, yContact);
+    doc.text('MAILING ADDRESS', 260, yContact);
+    // Move contact values to the right of the label, with a clear gap
+    // Move both label and value 36pt (6 spaces) to the left
+    const contactLabelX = labelX1 - 36;
+    const contactValueX = labelX1 - 27;
+    doc.text('Email', contactLabelX, yContact+rowH, {align:'right'});
+    doc.text('Phone#', contactLabelX, yContact+rowH*2, {align:'right'});
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.email || '', contactValueX, yContact+rowH);
+    doc.text(data.phone || '', contactValueX, yContact+rowH*2);
+    // Mailing address with three spaces indent
+    doc.setFont('helvetica', 'normal');
+    doc.text('   ' + (data.streetAddress || ''), 260, yContact+rowH);
+    let cityStateZip = (data.city || '') + (data.state ? ' ' + data.state : '') + (data.zip ? ' ' + data.zip : '');
+    doc.text('   ' + cityStateZip.trim(), 260, yContact+rowH*2);
+
+    // Signature and Enclosures
+    let yBottom = yContact + rowH*3 + 30;
+    // Line above signature box
+    yBottom += 0; // (no line drawn)
+    // Signature box
+    doc.rect(40, yBottom, 180, 50);
+    doc.text('Signature', 40, yBottom + 62);
+    // Line below signature box
+    //doc.line(40, yBottom + 70, pageWidth - 40, yBottom + 70);
+    // Enclosures
+    doc.setFont('helvetica', 'bold');
+    doc.text('Enclosures:', 260, yBottom);
+    doc.setFont('helvetica', 'normal');
+    doc.text('1. Copy of I-797C, USCIS i-485 Receipt Notice', 260, yBottom+16);
+    doc.text('2. Sealed I-693 Medical Report signed by the Civil Surgeon', 260, yBottom+32);
+    doc.text('3. Copy of Passport', 260, yBottom+48);
+    doc.text('4. Copy of Birth Certificate', 260, yBottom+64);
+    // Date and Place (extra space below signature)
+    yBottom += 130;
+    const today = new Date();
+    const todayStr = formatDate(today.toISOString().slice(0,10));
+    doc.text('Date:    ' + todayStr, 40, yBottom);
+    doc.text('Place:    ' + cityStateZip.trim(), 260, yBottom);
+    // Save
+    doc.save(filename);
+}
+</script>
+</body>
+</html>
