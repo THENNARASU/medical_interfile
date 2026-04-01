@@ -11,7 +11,11 @@ function saveFormData() {
     const form = document.getElementById('medicalForm');
     const data = {};
     Array.from(form.elements).forEach(el => {
-        if (el.name) data[el.name] = el.value;
+        if (el.type === 'checkbox') {
+            data[el.name] = el.checked;
+        } else if (el.name) {
+            data[el.name] = el.value;
+        }
     });
     // Use "lastname, firstname" as key
     if (data.lastName && data.firstName) {
@@ -32,8 +36,15 @@ function loadFormData() {
         if (saved) {
             const data = JSON.parse(saved);
             Object.keys(data).forEach(k => {
-                if (form.elements[k]) form.elements[k].value = data[k];
+                if (form.elements[k]) {
+                    if (form.elements[k].type === 'checkbox') {
+                        form.elements[k].checked = !!data[k];
+                    } else {
+                        form.elements[k].value = data[k];
+                    }
+                }
             });
+            updateEnclosures();
         }
     }
 }
@@ -68,13 +79,29 @@ function selectApp() {
             const data = JSON.parse(saved);
             const form = document.getElementById('medicalForm');
             Object.keys(data).forEach(k => {
-                if (form.elements[k]) form.elements[k].value = data[k];
+                if (form.elements[k]) {
+                    if (form.elements[k].type === 'checkbox') {
+                        form.elements[k].checked = !!data[k];
+                    } else {
+                        form.elements[k].value = data[k];
+                    }
+                }
             });
+            updateEnclosures();
         }
     }
 }
 
 // On page load, populate the listbox and enable/disable as needed
+function updateEnclosures() {
+    var passport = document.getElementById('copyOfPassport').checked;
+    var birthCert = document.getElementById('copyOfBirthCertificate').checked;
+    var enclosureList = document.getElementById('enclosureList');
+    if (!enclosureList) return;
+    enclosureList.querySelector('.passport').style.display = passport ? '' : 'none';
+    enclosureList.querySelector('.birthcert').style.display = birthCert ? '' : 'none';
+}
+
 window.onload = function() {
     updateAppList();
     // If there are applicants, load the first one's data by default
@@ -83,6 +110,10 @@ window.onload = function() {
         appList.selectedIndex = 0;
         selectApp();
     }
+    // Attach listeners to checkboxes
+    document.getElementById('copyOfPassport').addEventListener('change', updateEnclosures);
+    document.getElementById('copyOfBirthCertificate').addEventListener('change', updateEnclosures);
+    updateEnclosures();
 };
 </script>
 
@@ -203,9 +234,7 @@ form button[type="submit"]:hover {
         <label>A-Number:
             <input type="number" name="aNumber" th:value="${formData.ANumber}" required title="Numbers only">
         </label>
-        <label>Date of Birth:
-            <input type="date" name="dob" th:value="${formData.dob}" required>
-        </label>
+        <!-- Date of Birth removed as per requirements -->
         <label>Email:
             <input type="email" name="email" th:value="${formData.email}" required>
         </label>
@@ -282,7 +311,19 @@ form button[type="submit"]:hover {
         <label>Zip:
             <input type="text" name="zip" th:value="${formData.zip}" required>
         </label>
+        <label>
+            <input type="checkbox" name="copyOfPassport" id="copyOfPassport"> Copy of Passport
+        </label>
+        <label>
+            <input type="checkbox" name="copyOfBirthCertificate" id="copyOfBirthCertificate"> Copy of Birth Certificate
+        </label>
         <button type="submit">Generate PDF</button>
+        <ul id="enclosureList" style="margin-top:18px; font-size:14px;">
+            <li>1. Copy of I-797C, USCIS i-485 Receipt Notice</li>
+            <li>2. Sealed I-693 Medical Report signed by the Civil Surgeon</li>
+            <li class="passport" style="display:none;">3. Copy of Passport</li>
+            <li class="birthcert" style="display:none;">4. Copy of Birth Certificate</li>
+        </ul>
     </form>
 </div>
 </body>

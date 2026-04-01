@@ -86,7 +86,7 @@ public class PdfService {
             document.add(subject);
 
             document.add(new Paragraph("\n\nDear Sir/Madam,", new Font(Font.FontFamily.HELVETICA, 10)));
-            document.add(new Paragraph("\nMy Form I-485 (Adjustment of Status) is pending. My priority date became current per the April 2026 Visa Bulletin.", new Font(Font.FontFamily.HELVETICA, 10)));
+            document.add(new Paragraph("\nMy Form I-485 (Adjustment of Status) is pending. My priority date became current as per the April 2026 Visa Bulletin.", new Font(Font.FontFamily.HELVETICA, 10)));
             document.add(new Paragraph("\nPlease interfile the enclosed Form I-693 (Report of Immigration Medical Examination and Vaccination Record), signed by a civil surgeon, with my pending Form I-485.", new Font(Font.FontFamily.HELVETICA, 10)));
 
 
